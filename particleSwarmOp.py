@@ -7,6 +7,7 @@ to find the minimum of a function.
 '''
 
 import random as r
+import matplotlib.pyplot as plt
 
 '''
 Define the function to be minimized.
@@ -46,6 +47,15 @@ def initialize_particles(n, x_min, x_max, v_min, v_max):
         
     return particles
 
+def plot(particles):
+    x = [p["x"] for p in particles]
+    y = [p["y"] for p in particles]
+    plt.scatter(x, y)
+    plt.xlim(-10, 10)
+    plt.ylim(-10, 10)
+    plt.grid(True)
+    plt.show()
+
 '''
 Main function
 '''
@@ -74,6 +84,8 @@ def main():
     # Initialize particles
     particles = initialize_particles(n, x_min, x_max, v_min, v_max)
 
+    plot(particles)
+    
     # Global best particle
     global_best = particles[0]
     for i in range(1, n):
@@ -107,6 +119,9 @@ def main():
                 global_best = particles[j]
             
         print("Iteration", i, ":", global_best["best_f"])
+        
+        if i == iterations/2 or i == iterations-1 or i == iterations/4:
+            plot(particles)
         
     print("Global best particle:", global_best)
         
