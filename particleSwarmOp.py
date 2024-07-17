@@ -7,6 +7,7 @@ to find the minimum of a function.
 '''
 
 import random as r
+import numpy as np
 import matplotlib.pyplot as plt
 
 '''
@@ -47,13 +48,16 @@ def initialize_particles(n, x_min, x_max, v_min, v_max):
         
     return particles
 
-def plot(particles):
-    x = [p["x"] for p in particles]
-    y = [p["y"] for p in particles]
-    plt.scatter(x, y)
+def plot_contour(particles, global_best, iteration):
+    X, Y = np.meshgrid(np.linspace(-10, 10, 100), np.linspace(-10, 10, 100))
+    Z = f(X, Y)
+    plt.contourf(X, Y, Z, levels=10, cmap="plasma")
+    for p in particles:
+        plt.scatter(p["x"], p["y"], color='g')
+    plt.scatter(global_best["best_x"], global_best["best_y"], color='r')
+    plt.title(f'Iteration {iteration}')
     plt.xlim(-10, 10)
     plt.ylim(-10, 10)
-    plt.grid(True)
     plt.show()
 
 '''
@@ -80,11 +84,10 @@ def main():
 
     # Number of iterations
     iterations = 100
+    threshold = 1e-15
     
     # Initialize particles
     particles = initialize_particles(n, x_min, x_max, v_min, v_max)
-
-    plot(particles)
     
     # Global best particle
     global_best = particles[0]
@@ -96,35 +99,42 @@ def main():
         
         r.seed(777)
         
-        for j in range(n):
+        if i == 0:
+            plot_contour(particles, global_best, i)
+        
+        for particle in particles:
             r1 = r.random()
             r2 = r.random()
             
             # Update particle velocity
-            particles[j]["vx"] = w*particles[j]["vx"] + c1*r1*(particles[j]["best_x"] - particles[j]["x"]) + c2*r2*(global_best["best_x"] - particles[j]["x"])
-            particles[j]["vy"] = w*particles[j]["vy"] + c1*r1*(particles[j]["best_y"] - particles[j]["y"]) + c2*r2*(global_best["best_y"] - particles[j]["y"])
+            particle["vx"] = w*particle["vx"] + c1*r1*(particle["best_x"] - particle["x"]) + c2*r2*(global_best["best_x"] - particle["x"])
+            particle["vy"] = w*particle["vy"] + c1*r1*(particle["best_y"] - particle["y"]) + c2*r2*(global_best["best_y"] - particle["y"])
             
             # Update particle position
-            particles[j]["x"] = particles[j]["x"] + particles[j]["vx"]
-            particles[j]["y"] = particles[j]["y"] + particles[j]["vy"]
+            particle["x"] += particle["vx"]
+            particle["y"] += particle["vy"]
             
             # Update particle best position
-            if f(particles[j]["x"], particles[j]["y"]) < particles[j]["best_f"]:
-                particles[j]["best_x"] = particles[j]["x"]
-                particles[j]["best_y"] = particles[j]["y"]
-                particles[j]["best_f"] = f(particles[j]["x"], particles[j]["y"])
+            if f(particle["x"], particle["y"]) < particle["best_f"]:
+                particle["best_x"] = particle["x"]
+                particle["best_y"] = particle["y"]
+                particle["best_f"] = f(particle["x"], particle["y"])
             
             # Update global best position
-            if particles[j]["best_f"] < global_best["best_f"]:
-                global_best = particles[j]
+            if particle["best_f"] < global_best["best_f"]:
+                global_best = particle
             
         print("Iteration", i, ":", global_best["best_f"])
         
-        if i == iterations/2 or i == iterations-1 or i == iterations/4:
-            plot(particles)
-        
-    print("Global best particle:", global_best)
-        
+        if i % 10 == 0 and i != 0 or i == iterations - 1:
+            plot_contour(particles, global_best, i)
+            
+        if global_best["best_f"] < threshold:
+            print(f"\nStopping early at iteration {i} with global best f-value: {global_best['best_f']}")
+            break
+    
+    print(f"\nGlobal best particle: x = {global_best['x']}, y = {global_best['y']}, f(x,y) = {global_best['best_f']}")
+    plot_contour(particles, global_best, i)    
 
 if __name__ == '__main__':
     main()
